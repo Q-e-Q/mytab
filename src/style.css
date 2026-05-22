@@ -1,4 +1,18 @@
-:root {
+/* 清除浏览器默认间距，让应用占满整个视口 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+/*  */
+html, body, #app {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;           /* 避免出现双滚动条 */
+  font-family: "Helvetica Neue", Helvetica, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+/* :root {
   --text: #6b6375;
   --text-h: #08060d;
   --bg: #fff;
@@ -293,4 +307,4 @@ code {
     right: 0;
     border-right-color: var(--border);
   }
-}
+} */
