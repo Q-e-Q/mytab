@@ -1,8 +1,26 @@
-/** 分组类型：侧边栏中每个卡片对应一个分组 */
+/** 分组实体 */
 export interface Group {
-  id: string          // 唯一标识，使用 crypto.randomUUID() 生成
-  name: string        // 分组名称
-  icon: string        // 图标名称（对应 Element Plus 图标组件名，如 'Folder'、'Star'）
-  order: number       // 排序序号，用于拖拽排序
-  createdAt: number   // 创建时间戳
+  id: string
+  name: string
+  icon: string
+  order: number
+  createdAt: number
+}
+
+/** 链接实体 */
+export interface Link {
+  id: string
+  name: string
+  url: string
+  icon: string
+  groupId: string
+  order: number
+  isAddPlaceholder?: boolean  // 是否为"添加"占位链接
+}
+
+/** 搜索引擎 */
+export interface SearchEngine {
+  label: string
+  value: string
+  url: string
 }

@@ -1,45 +1,60 @@
-<!-- 根组件：左右两栏布局，左侧为分组侧边栏，右侧为内容区 -->
+<!--
+  根组件：左右两栏布局
+  侧边栏位置（左/右）由 store 动态决定
+  侧边栏宽度和不透明度交由 Sidebar 组件内部控制
+-->
 <template>
-  <!-- el-container：Element Plus 提供的容器组件，用于构建页面布局 -->
-  <el-container class="app-container">
-    <!-- el-aside：侧边栏区域，指定宽度 120px -->
-    <el-aside width="120px" class="sidebar">
-      <!-- 引入侧边栏组件，展示分组列表 -->
+  <div
+    class="app-container"
+    :style="{ flexDirection: store.sidebarPosition === 'left' ? 'row' : 'row-reverse' }"
+  >
+    <!-- 侧边栏区域：width 由 store 动态控制（opacity 交由内部 Sidebar 组件处理） -->
+    <aside class="sidebar" :style="{ width: store.sidebarWidth + 'px' }">
       <Sidebar />
-    </el-aside>
+    </aside>
 
-    <!-- el-main：主要内容区域，占据剩余宽度 -->
-    <el-main class="content">
-      <!-- 引入内容区域组件，显示选中分组的详情 -->
+    <!-- 主要内容区域，占据剩余宽度 -->
+    <main class="content">
       <ContentArea />
-    </el-main>
-  </el-container>
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">
-// 引入侧边栏组件和内容区域组件
+/**
+ * 根组件：
+ * - 引入侧边栏和内容区组件
+ * - 侧边栏的位置、宽度由 store 驱动
+ * - 注意：opacity 放在 Sidebar 内部而非 aside 上，避免创建独立 stacking context 导致弹窗 z-index 失效
+ */
 import Sidebar from '@/components/Sidebar.vue'
 import ContentArea from '@/components/ContentArea.vue'
+import { useTabsStore } from '@/stores/tabs'
+
+const store = useTabsStore()
 </script>
 
 <style scoped>
-/* 容器撑满整个视口高度 */
+/* 容器撑满整个视口高度，flex 布局 */
 .app-container {
+  display: flex;
   height: 100%;
 }
 
-/* 侧边栏样式：浅灰背景 + 右边框分割线 */
+/* 侧边栏样式：背景色 + 边框分割线 */
 .sidebar {
   background-color: var(--bg-secondary);
-  border-right: 1px solid var(--border-color);
-  position: relative;           /* 为内部右键菜单等绝对定位元素提供参照 */
+  border-inline-end: 1px solid var(--border-color);
+  position: relative;
 }
 
-/* 内容区域：居中显示 */
+/* 内容区域：居中显示，溢出时滚动 */
 .content {
-  display: flex;                /* 弹性布局 */
-  align-items: center;          /* 垂直居中 */
-  justify-content: center;      /* 水平居中 */
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
   background-color: var(--bg-content);
+  overflow: hidden;
 }
 </style>

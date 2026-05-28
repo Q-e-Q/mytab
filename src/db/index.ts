@@ -1,52 +1,81 @@
 /**
  * 数据库层：基于 Dexie (IndexedDB) 的数据持久化
- * 负责分组的增删改查和批量排序
+ * 负责分组和链接的增删改查
  */
-import Dexie, { type Table } from 'dexie'       // 引入 Dexie 数据库库和 Table 类型
-import type { Group } from '@/types/tab'        // 引入分组类型定义
+import Dexie, { type Table } from 'dexie'
+import type { Group, Link } from '@/types/tab'
 
 /** 继承 Dexie 定义数据库表和版本 */
-export class MyTabDB extends Dexie {            // 自定义数据库类，继承 Dexie
-  groups!: Table<Group, string>                 // groups 表，主键为 string 类型
+export class MyTabDB extends Dexie {
+  groups!: Table<Group, string>                 // groups 表，主键为 string
+  links!: Table<Link, string>                   // links 表，主键为 string
 
-  constructor() {                               // 构造函数
-    super('mytab')                              // 调用父类，数据库名称为 'mytab'
-    this.version(1).stores({                    // 定义数据库版本 1
-      groups: 'id, order'                       // groups 表：id 为主键，order 为索引
+  constructor() {
+    super('mytab')
+    this.version(2).stores({                    // 升级到版本 2
+      groups: 'id, order',                      // groups 表不变
+      links: 'id, groupId, order'               // links 表：id 主键，groupId 和 order 为索引
     })
   }
 }
 
-export const db = new MyTabDB()                // 创建数据库实例（单例）
+export const db = new MyTabDB()
 
 /** 分组 CRUD 操作集合 */
-export const groupDB = {                        // 封装好的分组数据操作对象
+export const groupDB = {
+  async getAll(): Promise<Group[]> {
+    return db.groups.orderBy('order').toArray()
+  },
+  async add(group: Group): Promise<void> {
+    await db.groups.add(group)
+  },
+  async update(id: string, data: Partial<Group>): Promise<void> {
+    await db.groups.update(id, data)
+  },
+  async delete(id: string): Promise<void> {
+    await db.groups.delete(id)
+  },
+  async updateOrder(groups: Group[]): Promise<void> {
+    await db.transaction('rw', db.groups, async () => {
+      for (const group of groups) {
+        await db.groups.update(group.id, { order: group.order })
+      }
+    })
+  }
+}
 
-  /** 获取所有分组，按 order 升序排列 */
-  async getAll(): Promise<Group[]> {            // 返回分组数组的 Promise
-    return db.groups.orderBy('order').toArray() // 按 order 排序后转为数组返回
+/** 链接 CRUD 操作集合 */
+export const linkDB = {
+  /** 获取指定分组的所有链接，按 order 排序 */
+  async getByGroup(groupId: string): Promise<Link[]> {
+    return db.links.where('groupId').equals(groupId).sortBy('order')
   },
 
-  /** 添加一个分组 */
-  async add(group: Group): Promise<void> {      // 接收一个分组对象
-    await db.groups.add(group)                  // 写入 IndexedDB
+  /** 添加一个链接 */
+  async add(link: Link): Promise<void> {
+    await db.links.add(link)
   },
 
-  /** 更新指定分组的字段 */
-  async update(id: string, data: Partial<Group>): Promise<void> { // 按 id 更新部分字段
-    await db.groups.update(id, data)            // 调用 Dexie 的 update 方法
+  /** 更新链接 */
+  async update(id: string, data: Partial<Link>): Promise<void> {
+    await db.links.update(id, data)
   },
 
-  /** 删除指定分组 */
-  async delete(id: string): Promise<void> {     // 按 id 删除
-    await db.groups.delete(id)                  // 调用 Dexie 的 delete 方法
+  /** 删除链接 */
+  async delete(id: string): Promise<void> {
+    await db.links.delete(id)
   },
 
-  /** 批量更新分组排序（在事务中执行，保证数据一致性） */
-  async updateOrder(groups: Group[]): Promise<void> { // 接收排序后的分组数组
-    await db.transaction('rw', db.groups, async () => { // 读写事务，保证原子性
-      for (const group of groups) {              // 遍历每个分组
-        await db.groups.update(group.id, { order: group.order }) // 更新 order 字段
+  /** 删除某个分组下的全部链接（删除分组时调用） */
+  async deleteByGroup(groupId: string): Promise<void> {
+    await db.links.where('groupId').equals(groupId).delete()
+  },
+
+  /** 批量更新链接排序（拖拽后调用） */
+  async updateOrder(links: Link[]): Promise<void> {
+    await db.transaction('rw', db.links, async () => {
+      for (const link of links) {
+        await db.links.update(link.id, { order: link.order })
       }
     })
   }

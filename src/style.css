@@ -36,6 +36,9 @@ html, body, #app {
 }
 
 /* ========== 深色模式 CSS 变量覆盖 ========== */
+/* Element Plus 弹出下拉菜单放在设置弹窗之上 */
+.settings-popper { z-index: 3100 !important; }
+
 html.dark {
   --bg-primary: #1d1e1f;
   --bg-secondary: #141414;
